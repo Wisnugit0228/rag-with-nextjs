@@ -1,0 +1,56 @@
+import { FieldValues, Path, UseFormReturn } from "react-hook-form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+
+export default function FormInput<T extends FieldValues>({
+  form,
+  name,
+  label,
+  placeholder,
+  type = "text",
+}: {
+  form: UseFormReturn<T>;
+  name: Path<T>;
+  label: string;
+  placeholder?: string;
+  type?: string;
+}) {
+  const id = String(name);
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field: { ...rest } }) => (
+        <FormItem>
+          <FormLabel htmlFor={id}>{label}</FormLabel>
+          <FormControl>
+            {type === "textarea" ? (
+              <Textarea
+                id={id}
+                {...rest}
+                placeholder={placeholder}
+                autoComplete="off"
+              />
+            ) : (
+              <Input
+                id={id}
+                {...rest}
+                type={type}
+                placeholder={placeholder}
+                autoComplete="off"
+              />
+            )}
+          </FormControl>
+          <FormMessage className="text-xs" />
+        </FormItem>
+      )}
+    />
+  );
+}
