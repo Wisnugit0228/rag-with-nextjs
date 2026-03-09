@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="bg-teal-500 flex p-2 item-center justify-center rounded-md">
             <Store className="size-4" />
           </div>
-          Hikari Store
+          RAG Project
         </div>
         {children}
       </div>

@@ -1,12 +1,25 @@
-import ollama from "ollama";
+import Groq from "groq-sdk";
+import { HfInference } from "@huggingface/inference";
 
-export async function createEmbedding(text: string) {
-  const response = await ollama.embeddings({
-    model: "nomic-embed-text",
-    prompt: text,
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+
+export async function createEmbedding(text: string): Promise<number[]> {
+  const result = await hf.featureExtraction({
+    model: "sentence-transformers/all-MiniLM-L6-v2",
+    inputs: text,
   });
 
-  return response.embedding;
+  // Pastikan hasilnya flat array of number
+  if (Array.isArray(result) && typeof result[0] === "number") {
+    return result as number[];
+  }
+
+  // Kadang HF return nested array, flatten
+  return (result as number[][]).flat();
 }
 
 export async function chatWithContext(
@@ -14,7 +27,6 @@ export async function chatWithContext(
   context: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
 ): Promise<string> {
-  // tambah return type eksplisit
   const systemPrompt = `You are a helpful assistant. Answer questions based ONLY on the context provided below. 
 If the answer is not in the context, say "I don't have enough information to answer that."
 Always answer in the same language as the question.
@@ -22,14 +34,15 @@ Always answer in the same language as the question.
 Context:
 ${context}`;
 
-  const response = await ollama.chat({
-    model: "llama3.2",
+  const response = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
     messages: [
       { role: "system", content: systemPrompt },
       ...history,
       { role: "user", content: question },
     ],
+    max_tokens: 1024,
   });
 
-  return response.message.content; // pastikan ada return ini
+  return response.choices[0].message.content ?? "";
 }

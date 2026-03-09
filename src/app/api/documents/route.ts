@@ -8,6 +8,7 @@ import path from "path";
 
 import { createEmbedding } from "@/lib/ollama";
 import { extractText } from "@/lib/extractText";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: Request) {
   try {
@@ -22,43 +23,56 @@ export async function POST(req: Request) {
     }
 
     const user = await getCurrentUser();
-
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const uploadPath = path.join(process.cwd(), "public/files", file.name);
+    // Upload ke Supabase Storage
+    const filePath = `files/${Date.now()}_${file.name}`;
 
-    await fs.ensureDir(path.dirname(uploadPath));
-    await fs.writeFile(uploadPath, buffer);
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: true,
+      });
 
+    if (uploadError) throw new Error(uploadError.message);
+
+    // Ambil public URL
+    const { data: urlData } = supabase.storage
+      .from("documents")
+      .getPublicUrl(filePath);
+
+    const fileUrl = urlData.publicUrl;
+
+    // Extract text dari buffer
     const content = await extractText(buffer, file.name);
 
     // Chunk text
     const chunkSize = 500;
     const chunks: string[] = [];
-
     for (let i = 0; i < content.length; i += chunkSize) {
       chunks.push(content.slice(i, i + chunkSize));
     }
 
+    // Simpan document ke DB
     const document = await prisma.document.create({
       data: {
         title: file.name,
-        fileUrl: `/files/${file.name}`,
+        fileUrl,
         uploadedById: user!.id,
+        status: "PROCESSING",
       },
     });
 
-    // Generate embeddings
+    // Generate embeddings dan simpan chunks
     for (let i = 0; i < chunks.length; i++) {
       const embedding = await createEmbedding(chunks[i]);
-
       const vector = `[${embedding.join(",")}]`;
 
       await prisma.$executeRaw`
         INSERT INTO document_chunks 
-        (id, "documentId", "chunkText", embedding, "chunkIndex", page, source, "createdAt")
-        VALUES 
-        (
+        ("id", "documentId", "chunkText", embedding, "chunkIndex", page, source, "createdAt")
+        VALUES (
           gen_random_uuid(),
           ${document.id},
           ${chunks[i]},
@@ -69,23 +83,17 @@ export async function POST(req: Request) {
           now()
         )
       `;
-
-      await prisma.document.update({
-        where: {
-          id: document.id,
-        },
-        data: {
-          status: "READY",
-        },
-      });
     }
 
-    return NextResponse.json({
-      success: true,
-      document,
+    // Update status jadi READY
+    await prisma.document.update({
+      where: { id: document.id },
+      data: { status: "READY" },
     });
+
+    return NextResponse.json({ success: true, document });
   } catch (error: any) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

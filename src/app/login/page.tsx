@@ -1,7 +1,7 @@
 import Login from "./_components/login";
 
 export const metadata = {
-  title: "HIKARI Store | Login",
+  title: "RAG Project | Login",
 };
 
 export default function LoginPage() {
