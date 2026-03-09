@@ -46,6 +46,7 @@ export async function proxy(req: NextRequest) {
     const permissionMap: Record<string, string> = {
       "/users": "users:view",
       "/roles": "roles:view",
+      "/documents": "documents:view",
     };
 
     for (const route in permissionMap) {

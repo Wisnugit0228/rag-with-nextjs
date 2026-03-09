@@ -5,6 +5,8 @@ import {
   Shield,
   Warehouse,
   Computer,
+  FileStack,
+  MessageCircleMore,
 } from "lucide-react";
 
 export type SidebarItem = {
@@ -19,6 +21,17 @@ export const sidebarItems: SidebarItem[] = [
     title: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Documents",
+    href: "/documents",
+    icon: FileStack,
+    permission: "documents:view",
+  },
+  {
+    title: "Chat Whith AI",
+    href: "/chat",
+    icon: MessageCircleMore,
   },
   {
     title: "Orders",

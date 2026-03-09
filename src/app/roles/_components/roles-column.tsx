@@ -7,6 +7,7 @@ import {
   Trash2,
   Pencil,
   ClipboardPlus,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ConfirmDialog from "@/components/common/confirm-dialog";
@@ -29,7 +30,7 @@ export const roleColumns = ({
     header: "Role",
     cell: ({ row }) => (
       <div className="flex items-center gap-3">
-        <GripVertical className="w-4 h-4 text-muted-foreground" />
+        <Shield className="w-4 h-4 text-muted-foreground" />
         <span className="font-medium">{row.original.name}</span>
       </div>
     ),

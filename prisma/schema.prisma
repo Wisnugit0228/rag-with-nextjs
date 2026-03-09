@@ -12,6 +12,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 
@@ -36,6 +37,8 @@ model User {
   role   Role @relation(fields: [roleId], references: [id])
 
   sessions Session[]
+  chatSessions ChatSession[]
+  documents Document[]
   createdAt DateTime @default(now())
 
   @@map("users")
@@ -75,4 +78,94 @@ model RolePermission {
   @@unique([roleId, permissionId])
 
   @@map("role-permissions")
+}
+
+enum DocumentStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+model Document {
+  id String @id @default(uuid())
+  title String
+  fileUrl String
+  uploadedById String
+  createdAt DateTime @default(now())
+  status DocumentStatus @default(PROCESSING)
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+  chunks DocumentChunk[]
+
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id String @id @default(uuid())
+  documentId String
+  chunkText String
+  embedding Unsupported("vector")
+  chunkIndex Int
+  page Int?
+  source String?
+  createdAt DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("document_chunks")
+}
+
+model ChatSession {
+  id String @id @default(uuid())
+  userId String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  chatMessages ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model ChatMessage {
+  id String @id @default(uuid())
+  chatSessionId String
+  role MessageRole
+  content String
+  createdAt DateTime @default(now())
+
+  chatSession ChatSession @relation(fields: [chatSessionId], references: [id])
+  feedbacks Feedback[]
+
+  @@index([chatSessionId])
+  @@map("chat_messages")
+}
+
+model SearchLog {
+  id String @id @default(uuid())
+  userId String?
+  query String
+
+  createdAt DateTime @default(now())
+
+  @@map("search_logs")
+}
+
+model Feedback {
+  id String @id @default(uuid())
+
+  messageId String
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  rating Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@map("feedbacks")
 }

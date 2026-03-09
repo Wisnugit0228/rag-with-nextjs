@@ -5,7 +5,7 @@ import TooltipAction from "@/components/common/tooltip-action";
 import { Button } from "@/components/ui/button";
 import { User } from "@/types/user";
 import { ColumnDef } from "@tanstack/react-table";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Trash2, Users } from "lucide-react";
 
 export const UsersColumn = ({
   onEdit,
@@ -19,7 +19,7 @@ export const UsersColumn = ({
     header: "Name",
     cell: ({ row }) => (
       <div className="flex item-center gap-3">
-        <GripVertical className="w-4 h-4 text-muted-foreground" />
+        <Users className="w-4 h-4 text-muted-foreground" />
         <span className="font-medium">{row.original.name}</span>
       </div>
     ),
